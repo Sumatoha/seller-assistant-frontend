@@ -56,12 +56,27 @@ export default function LoginPage() {
       setUser(response.user);
       router.push("/dashboard");
     } catch (err: any) {
+      console.error("Auth error:", err);
+      console.error("Error response:", err.response?.data);
+      console.error("Error status:", err.response?.status);
+      console.error("Error code:", err.code);
+
       if (err.response?.status === 409) {
         setError("Пользователь с таким email уже существует");
       } else if (err.response?.status === 401) {
         setError("Неверный email или пароль");
+      } else if (err.response?.status === 400) {
+        // Показываем детали валидационных ошибок
+        const details = err.response.data?.details || err.response.data?.error || "Проверьте правильность введенных данных";
+        setError(`Ошибка валидации: ${details}`);
+      } else if (err.response?.data?.error) {
+        setError(err.response.data.error);
+      } else if (err.code === "ERR_NETWORK") {
+        setError("Сервер недоступен. Проверьте подключение к интернету.");
       } else {
-        setError("Ошибка. Попробуйте снова.");
+        // Показываем более детальную ошибку для диагностики
+        const errorMsg = err.message || "Неизвестная ошибка";
+        setError(`Ошибка: ${errorMsg}. Проверьте консоль для подробностей.`);
       }
     } finally {
       setIsLoading(false);

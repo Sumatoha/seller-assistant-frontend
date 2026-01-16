@@ -17,6 +17,10 @@ class ApiClient {
   private client: AxiosInstance;
 
   constructor() {
+    // Log API URL for debugging
+    console.log("[API Client] Initializing with base URL:", API_BASE_URL);
+    console.log("[API Client] NEXT_PUBLIC_API_URL env:", process.env.NEXT_PUBLIC_API_URL);
+
     this.client = axios.create({
       baseURL: API_BASE_URL,
       headers: {
