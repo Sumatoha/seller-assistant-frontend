@@ -2,23 +2,14 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
-import {
-  Package,
-  Search,
-  TrendingDown,
-  AlertTriangle,
-  Filter,
-  X,
-  RefreshCw,
-} from "lucide-react";
+import { Package, Search, TrendingDown, AlertTriangle, X } from "lucide-react";
 import { api } from "@/lib/api";
 import { Header } from "@/components/layout/header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Modal } from "@/components/ui/modal";
-import { TableSkeleton } from "@/components/ui/skeleton";
-import { EmptyState } from "@/components/ui/empty-state";
+import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import type { Product } from "@/types";
@@ -29,20 +20,17 @@ export default function ProductsPage() {
   const searchParams = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState<FilterType>(
     (searchParams.get("filter") as FilterType) || "all"
   );
 
-  // Dumping modal state
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [showDumpingModal, setShowDumpingModal] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [minPrice, setMinPrice] = useState("");
-  const [isDumpingLoading, setIsDumpingLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const fetchProducts = async (refresh = false) => {
-    if (refresh) setIsRefreshing(true);
+  const fetchProducts = async () => {
     try {
       const { products: data } = await api.getProducts();
       setProducts(data || []);
@@ -50,7 +38,6 @@ export default function ProductsPage() {
       console.error("Failed to fetch products:", error);
     } finally {
       setIsLoading(false);
-      setIsRefreshing(false);
     }
   };
 
@@ -60,309 +47,188 @@ export default function ProductsPage() {
 
   const filteredProducts = useMemo(() => {
     let result = products;
-
-    // Apply filter
-    if (filter === "low-stock") {
-      result = result.filter((p) => p.days_of_stock <= 7);
-    } else if (filter === "dumping") {
-      result = result.filter((p) => p.dumping_enabled);
-    }
-
-    // Apply search
+    if (filter === "low-stock") result = result.filter((p) => p.days_of_stock <= 7);
+    else if (filter === "dumping") result = result.filter((p) => p.dumping_enabled);
     if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(
-        (p) =>
-          p.name.toLowerCase().includes(query) ||
-          p.sku.toLowerCase().includes(query)
-      );
+      const q = searchQuery.toLowerCase();
+      result = result.filter((p) => p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q));
     }
-
     return result;
   }, [products, filter, searchQuery]);
 
   const handleEnableDumping = async () => {
     if (!selectedProduct || !minPrice) return;
-
-    setIsDumpingLoading(true);
+    setIsSubmitting(true);
     try {
-      const minPriceNum = parseFloat(minPrice);
-      if (isNaN(minPriceNum) || minPriceNum <= 0) {
-        return;
-      }
-
-      await api.enableDumping(selectedProduct.id, minPriceNum);
+      await api.enableDumping(selectedProduct.id, parseFloat(minPrice));
       await fetchProducts();
-      setShowDumpingModal(false);
-      setMinPrice("");
+      setShowModal(false);
       setSelectedProduct(null);
+      setMinPrice("");
     } catch (error) {
-      console.error("Failed to enable dumping:", error);
+      console.error("Failed:", error);
     } finally {
-      setIsDumpingLoading(false);
+      setIsSubmitting(false);
     }
   };
 
-  const handleDisableDumping = async (productId: string) => {
+  const handleDisableDumping = async (id: string) => {
     try {
-      await api.disableDumping(productId);
+      await api.disableDumping(id);
       await fetchProducts();
     } catch (error) {
-      console.error("Failed to disable dumping:", error);
+      console.error("Failed:", error);
     }
   };
 
-  const openDumpingModal = (product: Product) => {
-    setSelectedProduct(product);
-    setMinPrice(product.min_price?.toString() || "");
-    setShowDumpingModal(true);
-  };
-
-  const filterButtons: { label: string; value: FilterType; icon: React.ReactNode }[] = [
-    { label: "All", value: "all", icon: <Package className="h-4 w-4" /> },
-    { label: "Low Stock", value: "low-stock", icon: <AlertTriangle className="h-4 w-4" /> },
-    { label: "Dumping", value: "dumping", icon: <TrendingDown className="h-4 w-4" /> },
+  const filters: { label: string; value: FilterType }[] = [
+    { label: "Все", value: "all" },
+    { label: "Мало на складе", value: "low-stock" },
+    { label: "Демпинг", value: "dumping" },
   ];
 
   return (
     <>
-      <Header
-        title="Products"
-        description={`${filteredProducts.length} products`}
-        action={
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => fetchProducts(true)}
-            disabled={isRefreshing}
-          >
-            <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
-            Refresh
-          </Button>
-        }
-      />
+      <Header title="Товары" description={`${filteredProducts.length} товаров`} />
 
-      <div className="p-4 lg:p-6 space-y-6">
-        {/* Filters and Search */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          {/* Filter buttons */}
+      <div className="p-4 lg:p-6 space-y-4">
+        {/* Filters */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex gap-2">
-            {filterButtons.map((btn) => (
-              <Button
-                key={btn.value}
-                variant={filter === btn.value ? "default" : "outline"}
-                size="sm"
-                onClick={() => setFilter(btn.value)}
+            {filters.map((f) => (
+              <button
+                key={f.value}
+                onClick={() => setFilter(f.value)}
+                className={cn(
+                  "rounded-lg px-3 py-1.5 text-sm font-medium",
+                  filter === f.value ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"
+                )}
               >
-                {btn.icon}
-                <span className="ml-2">{btn.label}</span>
-              </Button>
+                {f.label}
+              </button>
             ))}
           </div>
-
-          {/* Search */}
           <div className="relative w-full sm:w-64">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Search products..."
+              placeholder="Поиск..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-9 w-full rounded-lg border border-border bg-background pl-9 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              className="h-9 w-full rounded-lg border border-border bg-background pl-9 pr-4 text-sm placeholder:text-muted-foreground focus:ring-1 focus:ring-primary"
             />
             {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2"
-              >
+              <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2">
                 <X className="h-4 w-4 text-muted-foreground" />
               </button>
             )}
           </div>
         </div>
 
-        {/* Products Table */}
+        {/* Table */}
         {isLoading ? (
-          <TableSkeleton rows={8} />
+          <div className="space-y-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-16 w-full rounded-lg" />
+            ))}
+          </div>
         ) : filteredProducts.length === 0 ? (
-          <EmptyState
-            icon={Package}
-            title="No products found"
-            description={
-              searchQuery
-                ? "Try adjusting your search query"
-                : "Products will appear here once synced from Kaspi"
-            }
-          />
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <Package className="h-10 w-10 text-muted-foreground mb-3" />
+            <p className="text-sm text-muted-foreground">Товары не найдены</p>
+          </div>
         ) : (
           <div className="rounded-xl border border-border overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-muted/50">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Product
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      SKU
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Price
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Stock
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Actions
-                    </th>
+            <table className="w-full">
+              <thead className="bg-muted/50 text-xs text-muted-foreground">
+                <tr>
+                  <th className="px-4 py-3 text-left font-medium">Товар</th>
+                  <th className="px-4 py-3 text-left font-medium hidden sm:table-cell">SKU</th>
+                  <th className="px-4 py-3 text-left font-medium">Цена</th>
+                  <th className="px-4 py-3 text-left font-medium">Остаток</th>
+                  <th className="px-4 py-3 text-right font-medium">Действие</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {filteredProducts.map((p) => (
+                  <tr key={p.id} className="hover:bg-muted/30">
+                    <td className="px-4 py-3">
+                      <p className="text-sm font-medium truncate max-w-[200px]">{p.name}</p>
+                      <p className="text-xs text-muted-foreground sm:hidden">{p.sku}</p>
+                    </td>
+                    <td className="px-4 py-3 hidden sm:table-cell">
+                      <code className="text-xs bg-muted px-1.5 py-0.5 rounded">{p.sku}</code>
+                    </td>
+                    <td className="px-4 py-3">
+                      <p className="text-sm font-medium">{formatCurrency(p.price)}</p>
+                      {p.dumping_enabled && (
+                        <p className="text-xs text-muted-foreground">мин: {formatCurrency(p.min_price || 0)}</p>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <Badge variant={p.stock <= 5 ? "destructive" : p.days_of_stock <= 7 ? "warning" : "secondary"}>
+                        {p.stock} шт
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      {p.dumping_enabled ? (
+                        <Button variant="ghost" size="sm" onClick={() => handleDisableDumping(p.id)}>
+                          Выкл
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedProduct(p);
+                            setMinPrice(p.min_price?.toString() || "");
+                            setShowModal(true);
+                          }}
+                        >
+                          <TrendingDown className="h-4 w-4 mr-1" />
+                          Демпинг
+                        </Button>
+                      )}
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {filteredProducts.map((product) => (
-                    <tr key={product.id} className="hover:bg-muted/30 transition-colors">
-                      <td className="px-4 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center">
-                            <Package className="h-5 w-5 text-muted-foreground" />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="font-medium truncate max-w-xs">{product.name}</p>
-                            <p className="text-sm text-muted-foreground">{product.category}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <code className="rounded bg-muted px-2 py-1 text-sm">
-                          {product.sku}
-                        </code>
-                      </td>
-                      <td className="px-4 py-4">
-                        <div>
-                          <p className="font-medium">{formatCurrency(product.price)}</p>
-                          {product.dumping_enabled && product.competitor_price && (
-                            <p className="text-xs text-muted-foreground">
-                              Competitor: {formatCurrency(product.competitor_price)}
-                            </p>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <div>
-                          <Badge
-                            variant={
-                              product.stock <= 5
-                                ? "destructive"
-                                : product.days_of_stock <= 7
-                                ? "warning"
-                                : "secondary"
-                            }
-                          >
-                            {product.stock} units
-                          </Badge>
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            ~{product.days_of_stock} days
-                          </p>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="flex flex-wrap gap-1">
-                          {product.dumping_enabled && (
-                            <Badge variant="success" className="gap-1">
-                              <TrendingDown className="h-3 w-3" />
-                              Dumping
-                            </Badge>
-                          )}
-                          {product.days_of_stock <= 7 && (
-                            <Badge variant="warning" className="gap-1">
-                              <AlertTriangle className="h-3 w-3" />
-                              Low Stock
-                            </Badge>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 text-right">
-                        {product.dumping_enabled ? (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDisableDumping(product.id)}
-                          >
-                            Disable Dumping
-                          </Button>
-                        ) : (
-                          <Button
-                            variant="default"
-                            size="sm"
-                            onClick={() => openDumpingModal(product)}
-                          >
-                            <TrendingDown className="mr-2 h-4 w-4" />
-                            Enable Dumping
-                          </Button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
 
-      {/* Enable Dumping Modal */}
+      {/* Modal */}
       <Modal
-        isOpen={showDumpingModal}
+        isOpen={showModal}
         onClose={() => {
-          setShowDumpingModal(false);
+          setShowModal(false);
           setSelectedProduct(null);
           setMinPrice("");
         }}
-        title="Enable Price Dumping"
-        description={`Set minimum price for ${selectedProduct?.name}`}
+        title="Включить демпинг"
       >
         <div className="space-y-4">
-          <div className="rounded-lg bg-muted p-4">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Current Price</span>
-              <span className="font-medium">
-                {formatCurrency(selectedProduct?.price || 0)}
-              </span>
-            </div>
+          <div className="rounded-lg bg-muted p-3">
+            <p className="text-sm">{selectedProduct?.name}</p>
+            <p className="text-xs text-muted-foreground">Текущая цена: {formatCurrency(selectedProduct?.price || 0)}</p>
           </div>
-
           <Input
-            label="Minimum Price (KZT)"
+            label="Минимальная цена (₸)"
             type="number"
             placeholder="15000"
             value={minPrice}
             onChange={(e) => setMinPrice(e.target.value)}
           />
-
-          <p className="text-sm text-muted-foreground">
-            The system will automatically lower your price by 1 to beat competitors,
-            but never below this minimum.
+          <p className="text-xs text-muted-foreground">
+            Цена автоматически будет снижаться на 1₸ ниже конкурента, но не ниже минимальной.
           </p>
-
-          <div className="flex gap-3 justify-end">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowDumpingModal(false);
-                setSelectedProduct(null);
-                setMinPrice("");
-              }}
-            >
-              Cancel
+          <div className="flex gap-2 justify-end">
+            <Button variant="ghost" onClick={() => setShowModal(false)}>
+              Отмена
             </Button>
-            <Button
-              onClick={handleEnableDumping}
-              isLoading={isDumpingLoading}
-              disabled={!minPrice}
-            >
-              Enable Dumping
+            <Button onClick={handleEnableDumping} isLoading={isSubmitting} disabled={!minPrice}>
+              Включить
             </Button>
           </div>
         </div>

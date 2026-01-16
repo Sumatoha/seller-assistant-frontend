@@ -8,111 +8,109 @@ import {
   Star,
   Settings,
   LogOut,
-  ChevronLeft,
-  Menu,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUIStore, useAuthStore } from "@/lib/store";
 import { api } from "@/lib/api";
 
 const navigation = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Products", href: "/products", icon: Package },
-  { name: "Reviews", href: "/reviews", icon: Star },
-  { name: "Settings", href: "/settings", icon: Settings },
+  { name: "Главная", href: "/dashboard", icon: LayoutDashboard },
+  { name: "Товары", href: "/products", icon: Package },
+  { name: "Отзывы", href: "/reviews", icon: Star },
+  { name: "Настройки", href: "/settings", icon: Settings },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { sidebarOpen, toggleSidebar } = useUIStore();
-  const { logout } = useAuthStore();
+  const { sidebarOpen, setSidebarOpen } = useUIStore();
+  const { user, logout } = useAuthStore();
 
   const handleLogout = () => {
     api.logout();
     logout();
   };
 
+  const displayName = user?.first_name || user?.email?.split("@")[0] || "User";
+
   return (
     <>
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-20 bg-black/50 lg:hidden"
-          onClick={toggleSidebar}
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
+          onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed left-0 top-0 z-30 flex h-screen flex-col border-r border-border bg-card transition-all duration-300",
-          sidebarOpen ? "w-64" : "w-0 lg:w-20",
-          "lg:relative"
+          "fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-card lg:relative lg:z-auto",
+          sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
       >
-        {/* Logo */}
-        <div className="flex h-16 items-center justify-between border-b border-border px-4">
-          <Link href="/dashboard" className={cn("flex items-center gap-3", !sidebarOpen && "lg:justify-center")}>
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold">
-              K
+        {/* Header */}
+        <div className="flex h-14 items-center justify-between px-4">
+          <Link href="/dashboard" className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+              <span className="text-sm font-bold text-primary">K</span>
             </div>
-            {sidebarOpen && (
-              <span className="font-semibold">Kaspi Assistant</span>
-            )}
+            <span className="font-medium">Kaspi</span>
           </Link>
           <button
-            onClick={toggleSidebar}
-            className="rounded-lg p-2 hover:bg-muted lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+            className="rounded-lg p-1.5 hover:bg-muted lg:hidden"
           >
-            <ChevronLeft className="h-5 w-5" />
+            <X className="h-5 w-5" />
           </button>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 space-y-1 p-3 overflow-y-auto">
+        {/* Nav */}
+        <nav className="flex-1 space-y-1 px-3 py-4">
           {navigation.map((item) => {
             const isActive = pathname === item.href;
             return (
               <Link
                 key={item.name}
                 href={item.href}
+                onClick={() => setSidebarOpen(false)}
                 className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium",
                   isActive
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                  !sidebarOpen && "lg:justify-center lg:px-2"
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 )}
               >
-                <item.icon className="h-5 w-5 shrink-0" />
-                {sidebarOpen && <span>{item.name}</span>}
+                <item.icon className="h-4 w-4" />
+                {item.name}
               </Link>
             );
           })}
         </nav>
 
-        {/* Logout */}
+        {/* User */}
         <div className="border-t border-border p-3">
+          <div className="mb-3 flex items-center gap-3 px-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-xs font-medium">
+              {displayName[0]?.toUpperCase()}
+            </div>
+            <div className="flex-1 truncate">
+              <p className="text-sm font-medium truncate">{displayName}</p>
+              {user?.email && (
+                <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+              )}
+            </div>
+          </div>
           <button
             onClick={handleLogout}
-            className={cn(
-              "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
-              !sidebarOpen && "lg:justify-center lg:px-2"
-            )}
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
           >
-            <LogOut className="h-5 w-5 shrink-0" />
-            {sidebarOpen && <span>Logout</span>}
+            <LogOut className="h-4 w-4" />
+            Выйти
           </button>
         </div>
       </aside>
-
-      {/* Mobile menu button */}
-      <button
-        onClick={toggleSidebar}
-        className="fixed left-4 top-4 z-10 rounded-lg border border-border bg-card p-2 shadow-sm lg:hidden"
-      >
-        <Menu className="h-5 w-5" />
-      </button>
     </>
   );
 }

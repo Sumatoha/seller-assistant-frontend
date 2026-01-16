@@ -1,10 +1,13 @@
 export interface User {
   id: string;
-  telegram_id: number;
-  username: string;
-  language: "ru" | "kk";
+  email: string;
+  first_name: string;
+  last_name: string;
+  language_code: "ru" | "kk";
   auto_reply_enabled: boolean;
   auto_dumping_enabled: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface AuthResponse {

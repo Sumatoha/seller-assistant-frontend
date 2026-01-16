@@ -47,10 +47,22 @@ class ApiClient {
   }
 
   // Auth
-  async login(telegramId: number, username: string): Promise<AuthResponse> {
+  async register(data: {
+    email: string;
+    password: string;
+    first_name: string;
+    last_name?: string;
+    language?: string;
+  }): Promise<AuthResponse> {
+    const { data: response } = await this.client.post<AuthResponse>("/auth/register", data);
+    Cookies.set("token", response.token, { expires: 7 });
+    return response;
+  }
+
+  async login(email: string, password: string): Promise<AuthResponse> {
     const { data } = await this.client.post<AuthResponse>("/auth/login", {
-      telegram_id: telegramId,
-      username,
+      email,
+      password,
     });
     Cookies.set("token", data.token, { expires: 7 });
     return data;
@@ -74,7 +86,7 @@ class ApiClient {
     return data;
   }
 
-  async updateSettings(settings: Partial<Pick<User, "auto_reply_enabled" | "auto_dumping_enabled" | "language">>): Promise<User> {
+  async updateSettings(settings: Partial<Pick<User, "auto_reply_enabled" | "auto_dumping_enabled" | "language_code">>): Promise<User> {
     const { data } = await this.client.patch<User>("/user/settings", settings);
     return data;
   }
