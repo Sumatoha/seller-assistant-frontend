@@ -120,6 +120,11 @@ class ApiClient {
     await this.client.delete("/kaspi-key");
   }
 
+  async syncKaspiNow(): Promise<{ message: string }> {
+    const { data } = await this.client.post<{ message: string }>("/kaspi-key/sync");
+    return data;
+  }
+
   // Products
   async getProducts(): Promise<{ products: Product[]; count: number }> {
     const { data } = await this.client.get<{ products: Product[]; count: number }>("/products");

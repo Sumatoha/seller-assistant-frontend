@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Key, Globe, MessageSquare, Trash2, Save, Check } from "lucide-react";
+import { Key, Globe, MessageSquare, Trash2, Save, Check, RefreshCw } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/store";
 import { Header } from "@/components/layout/header";
@@ -29,6 +29,9 @@ export default function SettingsPage() {
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncSuccess, setSyncSuccess] = useState(false);
 
   useEffect(() => {
     const fetchKey = async () => {
@@ -98,6 +101,21 @@ export default function SettingsPage() {
     }
   };
 
+  const handleSync = async () => {
+    setIsSyncing(true);
+    setSyncSuccess(false);
+    try {
+      await api.syncKaspiNow();
+      setSyncSuccess(true);
+      setTimeout(() => setSyncSuccess(false), 3000);
+    } catch (error: any) {
+      console.error("Sync error:", error);
+      alert(error.response?.data?.error || "Ошибка синхронизации");
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   const hasChanges =
     autoReply !== user?.auto_reply_enabled ||
     autoDumping !== user?.auto_dumping_enabled ||
@@ -116,18 +134,40 @@ export default function SettingsPage() {
           </div>
           <div className="p-4">
             {kaspiKey ? (
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <code className="text-sm bg-muted px-2 py-0.5 rounded">{kaspiKey.merchant_id}</code>
-                    <Badge variant={kaspiKey.is_active ? "success" : "secondary"}>
-                      {kaspiKey.is_active ? "Активен" : "Неактивен"}
-                    </Badge>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <code className="text-sm bg-muted px-2 py-0.5 rounded">{kaspiKey.merchant_id}</code>
+                      <Badge variant={kaspiKey.is_active ? "success" : "secondary"}>
+                        {kaspiKey.is_active ? "Активен" : "Неактивен"}
+                      </Badge>
+                    </div>
                   </div>
+                  <Button variant="ghost" size="sm" onClick={() => setShowDeleteModal(true)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => setShowDeleteModal(true)}>
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleSync}
+                    isLoading={isSyncing}
+                    variant="secondary"
+                    className="w-full"
+                  >
+                    {syncSuccess ? (
+                      <>
+                        <Check className="h-4 w-4 mr-2" />
+                        Синхронизировано
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Синхронизировать сейчас
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
             ) : (
               <div className="text-center py-4">
