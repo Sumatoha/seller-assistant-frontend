@@ -130,7 +130,7 @@ export default function SettingsPage() {
         <div className="rounded-xl border border-border bg-card">
           <div className="flex items-center gap-3 border-b border-border px-4 py-3">
             <Key className="h-4 w-4 text-muted-foreground" />
-            <h2 className="text-sm font-medium">Kaspi API</h2>
+            <h2 className="text-sm font-medium">KSA API</h2>
           </div>
           <div className="p-4">
             {kaspiKey ? (
@@ -243,7 +243,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Add Key Modal */}
-      <Modal isOpen={showKeyModal} onClose={() => setShowKeyModal(false)} title="Добавить Kaspi API">
+      <Modal isOpen={showKeyModal} onClose={() => setShowKeyModal(false)} title="Добавить KSA API">
         <div className="space-y-4">
           <Input
             label="API ключ"

@@ -1,16 +1,40 @@
 @import "tailwindcss";
 
-/* Modern Dark Theme - Always Dark */
+/* Light Theme (Default) */
 :root {
+  --background: #ffffff;
+  --foreground: #0a0a0a;
+  --muted: #f4f4f5;
+  --muted-foreground: #71717a;
+  --border: #e4e4e7;
+  --primary: #ef4444;
+  --primary-foreground: #ffffff;
+  --secondary: #0891b2;
+  --secondary-foreground: #ffffff;
+  --accent: #f4f4f5;
+  --accent-foreground: #0a0a0a;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --success: #10b981;
+  --success-foreground: #ffffff;
+  --warning: #f59e0b;
+  --warning-foreground: #000000;
+  --card: #ffffff;
+  --card-foreground: #0a0a0a;
+  --radius: 0.75rem;
+}
+
+/* Dark Theme */
+.dark {
   --background: #09090b;
   --foreground: #fafafa;
   --muted: #18181b;
   --muted-foreground: #71717a;
   --border: #27272a;
-  --primary: #a855f7;
+  --primary: #ff6b6b;
   --primary-foreground: #ffffff;
-  --secondary: #18181b;
-  --secondary-foreground: #fafafa;
+  --secondary: #06b6d4;
+  --secondary-foreground: #ffffff;
   --accent: #27272a;
   --accent-foreground: #fafafa;
   --destructive: #dc2626;
@@ -86,9 +110,16 @@ body {
 
 /* Smooth transitions everywhere */
 * {
-  transition-property: background-color, border-color, color, opacity;
+  transition-property: background-color, border-color, color, opacity, transform;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 150ms;
+  transition-duration: 200ms;
+}
+
+/* Root theme transition for smooth theme switching */
+:root,
+.dark {
+  transition: background-color 300ms cubic-bezier(0.4, 0, 0.2, 1),
+              color 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Selection color */

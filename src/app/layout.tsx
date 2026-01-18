@@ -8,9 +8,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Kaspi Seller Assistant",
-  description: "AI-powered assistant for Kaspi.kz marketplace sellers. Manage reviews, automate pricing, and track inventory.",
-  keywords: ["kaspi", "seller", "assistant", "marketplace", "ecommerce", "AI"],
+  title: "KSA - Kaspi Seller Assistant",
+  description: "KSA - AI-powered assistant for Kaspi.kz marketplace sellers. Manage reviews, automate pricing, and track inventory.",
+  keywords: ["ksa", "kaspi", "seller", "assistant", "marketplace", "ecommerce", "AI"],
 };
 
 export default function RootLayout({

@@ -54,9 +54,9 @@ export function Sidebar() {
         <div className="flex h-14 items-center justify-between px-4">
           <Link href="/dashboard" className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-              <span className="text-sm font-bold text-primary">K</span>
+              <span className="text-xs font-bold text-primary">KSA</span>
             </div>
-            <span className="font-medium">Kaspi</span>
+            <span className="font-medium">KSA</span>
           </Link>
           <button
             onClick={() => setSidebarOpen(false)}

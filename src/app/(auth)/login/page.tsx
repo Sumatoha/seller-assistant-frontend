@@ -93,10 +93,10 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-            <span className="text-xl font-bold text-primary">K</span>
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10">
+            <span className="text-base font-bold text-primary">KSA</span>
           </div>
-          <h1 className="text-xl font-semibold">Kaspi Assistant</h1>
+          <h1 className="text-xl font-semibold">KSA</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {mode === "login" ? "Войдите в аккаунт" : "Создайте аккаунт"}
           </p>

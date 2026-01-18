@@ -2,6 +2,7 @@
 
 import { Menu } from "lucide-react";
 import { useUIStore } from "@/lib/store";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 interface HeaderProps {
   title: string;
@@ -29,7 +30,10 @@ export function Header({ title, description, action }: HeaderProps) {
             )}
           </div>
         </div>
-        {action}
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          {action}
+        </div>
       </div>
     </header>
   );
